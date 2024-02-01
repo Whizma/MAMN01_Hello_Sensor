@@ -1,6 +1,12 @@
 package com.example.hellosensor;
 
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -24,6 +30,32 @@ public class AccelerometerActivity extends AppCompatActivity implements SensorEv
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+    }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        sensorManager.unregisterListener(this);
+    }
+
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+
+            accelerometerData.setText(String.format("X: %f\nY: %f\nZ: %f", x, y, z));
+        }
+    }
+
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // Denna kanske behövs men fattar inte varför :-)
+    }
 
 }

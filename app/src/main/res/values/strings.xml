@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Hello Sensor</string>
+    <string name="accelerometer_data">Accelerometer Data</string>
 </resources>
