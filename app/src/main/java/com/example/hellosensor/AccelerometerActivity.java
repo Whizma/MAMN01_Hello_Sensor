@@ -55,7 +55,7 @@ public class AccelerometerActivity extends AppCompatActivity implements SensorEv
     }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Denna kanske behövs men fattar inte varför :-)
+
     }
 
 }

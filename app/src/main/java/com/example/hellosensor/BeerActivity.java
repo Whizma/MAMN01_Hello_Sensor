@@ -47,7 +47,6 @@ public class BeerActivity extends AppCompatActivity implements SensorEventListen
         fullRunnable = new Runnable() {
             @Override
             public void run() {
-                beerImageView.setImageResource(R.drawable.full_beer);
                 vibratePhone(3000);
                 playSound(R.raw.minecraft_drinking);
             }
@@ -95,6 +94,8 @@ public class BeerActivity extends AppCompatActivity implements SensorEventListen
 
                 handler.removeCallbacks(halfEmptyRunnable);
                 handler.removeCallbacks(emptyRunnable);
+                beerImageView.setImageResource(R.drawable.full_beer);
+
             }
         }
     }
