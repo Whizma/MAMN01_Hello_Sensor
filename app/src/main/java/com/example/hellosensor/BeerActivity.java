@@ -21,12 +21,15 @@ public class BeerActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private ImageView beerImageView;
-    private Handler handler = new Handler(Looper.getMainLooper());
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     private Runnable fullRunnable;
     private Runnable halfEmptyRunnable;
     private Runnable emptyRunnable;
+
+    private Runnable resetRunnable;
     private boolean isTiltInRange = false;
+    private Vibrator vibrator;
 
     private MediaPlayer mediaPlayer;
 
@@ -40,32 +43,21 @@ public class BeerActivity extends AppCompatActivity implements SensorEventListen
 
         if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        } else {
-
         }
 
-        fullRunnable = new Runnable() {
-            @Override
-            public void run() {
-                vibratePhone(3000);
-                playSound(R.raw.minecraft_drinking);
-            }
+        fullRunnable = () -> {
+            vibratePhone(3000);
+            playSound(R.raw.minecraft_drinking);
         };
 
-        halfEmptyRunnable = new Runnable() {
-            @Override
-            public void run() {
-                vibratePhone(3000);
-                beerImageView.setImageResource(R.drawable.half_empty_beer);
-            }
+        halfEmptyRunnable = () -> {
+            vibratePhone(3000);
+            beerImageView.setImageResource(R.drawable.half_empty_beer);
         };
 
-        emptyRunnable = new Runnable() {
-            @Override
-            public void run() {
-                beerImageView.setImageResource(R.drawable.empty_beer);
-            }
-        };
+        emptyRunnable = () -> beerImageView.setImageResource(R.drawable.empty_beer);
+
+        resetRunnable = () -> beerImageView.setImageResource(R.drawable.full_beer);
     }
 
     @Override
@@ -83,20 +75,41 @@ public class BeerActivity extends AppCompatActivity implements SensorEventListen
             if (!isTiltInRange) {
                 // Roll just entered the range, schedule the image resource changes
                 isTiltInRange = true;
-                handler.post(fullRunnable);
+                handler.postDelayed(fullRunnable, 0);
                 handler.postDelayed(halfEmptyRunnable, 3000);
                 handler.postDelayed(emptyRunnable, 6000);
+                handler.postDelayed(resetRunnable, 9000);
             }
         } else {
             // Roll is out of range, reset the flags and remove any pending runnables
             if (isTiltInRange) {
                 isTiltInRange = false;
-
+                try {
+                    stopSound();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                stopVibration();
+                // handler.removeCallbacks(fullRunnable);
                 handler.removeCallbacks(halfEmptyRunnable);
                 handler.removeCallbacks(emptyRunnable);
-                beerImageView.setImageResource(R.drawable.full_beer);
-
+                handler.removeCallbacks(resetRunnable);
             }
+        }
+    }
+
+    private void stopSound() throws InterruptedException {
+        try {
+            if (mediaPlayer != null) {
+                mediaPlayer.stop();
+                mediaPlayer.release();
+                mediaPlayer = null;
+            }
+        }
+        catch(IllegalStateException e) {
+            System.out.println(e);
+            Thread.sleep(1000);
+            beerImageView.setImageResource(R.drawable.full_beer);
         }
     }
 
@@ -112,20 +125,25 @@ public class BeerActivity extends AppCompatActivity implements SensorEventListen
             mediaPlayer.start();
 
             // Optional: Set a listener to release the MediaPlayer once it's done playing
-            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    if (mp != null) {
-                        mp.release();
-                    }
+            mediaPlayer.setOnCompletionListener(mp -> {
+                if (mp != null) {
+                    mp.release();
                 }
             });
         }
     }
 
+    private void stopVibration() {
+        if (vibrator != null) {
+            vibrator.cancel();
+            vibrator = null;
+        }
+    }
+
+
     private void vibratePhone(int duration) {
         // Get instance of Vibrator from current Context
-        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // Check whether the Vibrator hardware is present
         if (vibrator.hasVibrator()) {
